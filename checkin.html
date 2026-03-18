@@ -260,6 +260,62 @@
 
     .modal-body ul li { margin-bottom: 4px; }
 
+    /* ── Language Selection ──────────────────────────────────────── */
+    #lang-select {
+      max-width: 480px;
+      margin: 24px auto;
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px 24px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .lang-select-prompt {
+      font-size: 1.3rem;
+      font-weight: 400;
+      color: #1a2840;
+      margin-bottom: 8px;
+    }
+
+    .lang-select-sub {
+      font-size: 0.9rem;
+      color: #5a7090;
+      margin-bottom: 28px;
+    }
+
+    .lang-select-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .lang-select-btn {
+      flex: 1;
+      max-width: 180px;
+      padding: 20px 12px;
+      border-radius: 12px;
+      border: 2px solid #d0dbe8;
+      background: #f8fafd;
+      color: #1a2840;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .lang-select-btn:hover {
+      border-color: #4da6e8;
+      background: #eef6fd;
+    }
+
+    .lang-select-btn .flag     { font-size: 2.5rem; }
+    .lang-select-btn .lsb-name { font-size: 1rem; font-weight: 600; color: #1a2840; }
+    .lang-select-btn .lsb-sub  { font-size: 0.78rem; color: #5a7090; }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -274,8 +330,26 @@
     <div class="form-title" id="header-title">Visitor Check-In</div>
   </div>
 
+  <!-- Language Selection -->
+  <div id="lang-select">
+    <div class="lang-select-prompt">Welcome! &nbsp;/&nbsp; Xin chào!</div>
+    <div class="lang-select-sub">Please select your language &nbsp;/&nbsp; Vui lòng chọn ngôn ngữ</div>
+    <div class="lang-select-buttons">
+      <button class="lang-select-btn" onclick="selectLanguage('en')">
+        <span class="flag">🇬🇧</span>
+        <span class="lsb-name">English</span>
+        <span class="lsb-sub">English</span>
+      </button>
+      <button class="lang-select-btn" onclick="selectLanguage('vi')">
+        <span class="flag">🇻🇳</span>
+        <span class="lsb-name">Tiếng Việt</span>
+        <span class="lsb-sub">Vietnamese</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Check-In Form -->
-  <div class="card" id="form-card">
+  <div class="card" id="form-card" style="display:none;">
     <form id="checkin-form" novalidate>
 
       <div class="field">
@@ -499,25 +573,16 @@
     };
 
     // ─── INIT ──────────────────────────────────────────────────────────────────
-    const params = new URLSearchParams(window.location.search);
-    const lang   = (params.get('lang') === 'vi') ? 'vi' : 'en';
-    const t      = i18n[lang];
+    let lang = 'en';
+    let t    = i18n[lang];
 
-    // ─── QR EXPIRY CHECK (5-minute window) ──────────────────────────────────
-    const QR_EXPIRY_MS = 5 * 60 * 1000;
-    const tsParam = parseInt(params.get('ts'), 10);
-    if (tsParam && (Date.now() - tsParam > QR_EXPIRY_MS)) {
-      document.addEventListener('DOMContentLoaded', function() {
-        document.body.innerHTML =
-          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px;font-family:Segoe UI,Arial,sans-serif;">' +
-          '<div style="font-size:3rem;margin-bottom:16px;">⏰</div>' +
-          '<h2 style="color:#0a1628;">' + (lang === 'vi' ? 'Mã QR đã hết hạn' : 'QR Code Expired') + '</h2>' +
-          '<p style="color:#5a7090;margin-top:12px;max-width:300px;line-height:1.6;">' +
-          (lang === 'vi'
-            ? 'Vui lòng quay lại quầy lễ tân và quét mã QR mới.'
-            : 'Please return to the reception kiosk and scan a new QR code.') +
-          '</p></div>';
-      });
+    function selectLanguage(selectedLang) {
+      lang = selectedLang;
+      t    = i18n[lang];
+      document.getElementById('lang-select').style.display = 'none';
+      document.getElementById('form-card').style.display   = 'block';
+      applyLanguage();
+      setVisitDate();
     }
 
     function applyLanguage() {
@@ -556,9 +621,6 @@
       const local  = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
       document.getElementById('visitDate').value = local;
     }
-
-    applyLanguage();
-    setVisitDate();
 
     // ─── MODAL ─────────────────────────────────────────────────────────────────
     let previousFocus = null;
