@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Visitor Check-In — Officience</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f7fb;
+      color: #1a2840;
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .header {
+      background: #0a1628;
+      color: #fff;
+      padding: 18px 20px 14px;
+      text-align: center;
+    }
+
+    .header .logo {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #4da6e8;
+      text-transform: uppercase;
+    }
+
+    .header .form-title {
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: #cde0f5;
+      margin-top: 4px;
+    }
+
+    /* ── Form Card ───────────────────────────────────────────────── */
+    .card {
+      max-width: 480px;
+      margin: 24px auto;
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 24px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+
+    .field { margin-bottom: 18px; }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #3a5070;
+      margin-bottom: 6px;
+    }
+
+    label .req { color: #e05050; margin-left: 2px; }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="datetime-local"] {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1.5px solid #d0dbe8;
+      border-radius: 10px;
+      font-size: 1rem;
+      color: #1a2840;
+      background: #f8fafd;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    input:focus {
+      border-color: #4da6e8;
+      background: #fff;
+    }
+
+    input.error {
+      border-color: #e05050;
+    }
+
+    input[readonly] {
+      background: #eef2f7;
+      color: #5a7090;
+      cursor: default;
+    }
+
+    .error-msg {
+      font-size: 0.78rem;
+      color: #e05050;
+      margin-top: 4px;
+      display: none;
+    }
+
+    /* ── Terms Row ───────────────────────────────────────────────── */
+    .terms-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #f4f7fb;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 24px;
+    }
+
+    .terms-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      accent-color: #4da6e8;
+      cursor: pointer;
+    }
+
+    .terms-row .terms-text {
+      font-size: 0.88rem;
+      color: #4a6080;
+      line-height: 1.5;
+    }
+
+    .terms-row .terms-link {
+      color: #4da6e8;
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: inherit;
+      font-family: inherit;
+      display: inline;
+    }
+
+    .terms-row.error-border {
+      border: 1.5px solid #e05050;
+    }
+
+    /* ── Submit Button ───────────────────────────────────────────── */
+    .submit-btn {
+      width: 100%;
+      padding: 15px;
+      background: #4da6e8;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .submit-btn:hover { background: #3592d4; }
+    .submit-btn:disabled { background: #a0c8e8; cursor: default; }
+
+    /* ── Thank You Screen ────────────────────────────────────────── */
+    #thanks-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 70vh;
+      text-align: center;
+      padding: 40px 24px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .thanks-icon { font-size: 4rem; margin-bottom: 16px; }
+
+    .thanks-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #0a1628;
+      margin-bottom: 10px;
+    }
+
+    .thanks-sub {
+      font-size: 1rem;
+      color: #5a7090;
+      max-width: 300px;
+      line-height: 1.6;
+    }
+
+    .redirect-note {
+      margin-top: 28px;
+      font-size: 0.85rem;
+      color: #9ab0c8;
+    }
+
+    /* ── Modal ───────────────────────────────────────────────────── */
+    #modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      background: #0a1628;
+      color: #cde0f5;
+      padding: 16px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: #7a9bbf;
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      padding: 20px;
+      font-size: 0.88rem;
+      color: #2a3e55;
+      line-height: 1.7;
+    }
+
+    .modal-body h3 {
+      font-size: 0.95rem;
+      color: #0a1628;
+      margin: 18px 0 8px;
+    }
+
+    .modal-body h3:first-child { margin-top: 0; }
+
+    .modal-body ul {
+      padding-left: 18px;
+    }
+
+    .modal-body ul li { margin-bottom: 4px; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">Officience</div>
+    <div class="form-title" id="header-title">Visitor Check-In</div>
+  </div>
+
+  <!-- Check-In Form -->
+  <div class="card" id="form-card">
+    <form id="checkin-form" novalidate>
+
+      <div class="field">
+        <label for="firstName"><span id="lbl-first">First Name</span> <span class="req">*</span></label>
+        <input type="text" id="firstName" autocomplete="given-name" aria-required="true" />
+        <div class="error-msg" id="err-firstName"></div>
+      </div>
+
+      <div class="field">
+        <label for="lastName"><span id="lbl-last">Last Name</span> <span class="req">*</span></label>
+        <input type="text" id="lastName" autocomplete="family-name" aria-required="true" />
+        <div class="error-msg" id="err-lastName"></div>
+      </div>
+
+      <div class="field">
+        <label for="company"><span id="lbl-company">Company / Organization</span> <span class="req">*</span></label>
+        <input type="text" id="company" autocomplete="organization" aria-required="true" />
+        <div class="error-msg" id="err-company"></div>
+      </div>
+
+      <div class="field">
+        <label for="hostName"><span id="lbl-host">Who are you here to see?</span> <span class="req">*</span></label>
+        <input type="text" id="hostName" aria-required="true" />
+        <div class="error-msg" id="err-hostName"></div>
+      </div>
+
+      <div class="field">
+        <label for="visitDate"><span id="lbl-date">Visit Date &amp; Time</span> <span class="req">*</span></label>
+        <input type="datetime-local" id="visitDate" readonly />
+      </div>
+
+      <div class="field">
+        <label for="email"><span id="lbl-email">Email</span> <span class="req">*</span></label>
+        <input type="email" id="email" autocomplete="email" aria-required="true" />
+        <div class="error-msg" id="err-email"></div>
+      </div>
+
+      <div class="field">
+        <label for="phone"><span id="lbl-phone">Contact Phone</span></label>
+        <input type="tel" id="phone" autocomplete="tel" />
+      </div>
+
+      <!-- Terms -->
+      <div class="terms-row" id="terms-row">
+        <input type="checkbox" id="termsCheck" />
+        <div class="terms-text" id="terms-text">
+          <!-- injected by JS -->
+        </div>
+      </div>
+      <div class="error-msg" id="err-terms" style="margin-top:-16px; margin-bottom:18px;"></div>
+
+      <button type="submit" class="submit-btn" id="submit-btn"></button>
+
+    </form>
+  </div>
+
+  <!-- Thank You Screen -->
+  <div id="thanks-screen">
+    <div class="thanks-icon">✅</div>
+    <div class="thanks-title" id="thanks-title">Thank you!</div>
+    <div class="thanks-sub" id="thanks-sub">Your check-in is complete. Welcome to Officience!</div>
+    <div class="redirect-note" id="redirect-note">Redirecting you in 3 seconds…</div>
+  </div>
+
+  <!-- Terms & Policies Modal -->
+  <div id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="modal-title">Terms &amp; Policies</span>
+        <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── CONFIG ────────────────────────────────────────────────────────────────
+    // Paste your deployed Google Apps Script Web App URL here:
+    const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+    const REDIRECT = {
+      vi: 'https://officience.com/',
+      en: 'https://www.linkedin.com/company/officience'  // update if needed
+    };
+    // ───────────────────────────────────────────────────────────────────────────
+
+    // ─── TRANSLATIONS ──────────────────────────────────────────────────────────
+    const i18n = {
+      en: {
+        headerTitle:  'Visitor Check-In',
+        lblFirst:     'First Name',
+        lblLast:      'Last Name',
+        lblCompany:   'Company / Organization',
+        lblHost:      'Who are you here to see?',
+        lblDate:      'Visit Date & Time',
+        lblEmail:     'Email',
+        lblPhone:     'Contact Phone (optional)',
+        termsText:    'By clicking <b>Submit</b>, I understand and agree that my check-in information will be handled as described in the',
+        termsLink:    'Terms & Policies',
+        submitBtn:    'Submit Check-In',
+        modalTitle:   'Terms & Policies',
+        thanksTitle:  'Thank you!',
+        thanksSub:    'Your check-in is complete. Welcome to Officience!',
+        redirectNote: 'Redirecting you in 3 seconds…',
+        errRequired:  'This field is required.',
+        errEmail:     'Please enter a valid email address.',
+        errTerms:     'You must accept the Terms & Policies to continue.',
+        errSubmit:    'Submission failed. Please try again.',
+      },
+      vi: {
+        headerTitle:  'Đăng Ký Khách Thăm',
+        lblFirst:     'Tên',
+        lblLast:      'Họ',
+        lblCompany:   'Công ty / Tổ chức',
+        lblHost:      'Bạn đến gặp ai?',
+        lblDate:      'Ngày & Giờ Thăm',
+        lblEmail:     'Email',
+        lblPhone:     'Số điện thoại (tuỳ chọn)',
+        termsText:    'Bằng cách nhấn <b>Gửi</b>, tôi đồng ý rằng thông tin đăng ký của tôi sẽ được xử lý theo mô tả trong',
+        termsLink:    'Điều khoản & Chính sách',
+        submitBtn:    'Gửi Đăng Ký',
+        modalTitle:   'Điều khoản & Chính sách',
+        thanksTitle:  'Cảm ơn bạn!',
+        thanksSub:    'Đăng ký của bạn đã hoàn tất. Chào mừng đến Officience!',
+        redirectNote: 'Đang chuyển hướng sau 3 giây…',
+        errRequired:  'Vui lòng điền thông tin vào ô này.',
+        errEmail:     'Vui lòng nhập địa chỉ email hợp lệ.',
+        errTerms:     'Bạn cần chấp nhận Điều khoản & Chính sách để tiếp tục.',
+        errSubmit:    'Gửi thất bại. Vui lòng thử lại.',
+      }
+    };
+
+    // ─── TERMS CONTENT ─────────────────────────────────────────────────────────
+    const termsContent = {
+      en: `
+        <p>We appreciate you taking the time to visit our premises. To make your visit smooth and secure, we'll be collecting a little bit of information when you check in. We are committed to protecting your privacy and handling your data responsibly.</p>
+
+        <h3>What Information We Collect</h3>
+        <ul>
+          <li>Your full name</li>
+          <li>Date and time of your visit</li>
+          <li>Company or organization (if applicable)</li>
+          <li>Purpose of your visit</li>
+          <li>Contact information (phone number, email address)</li>
+          <li>Areas of interest (if voluntarily provided)</li>
+        </ul>
+
+        <h3>Why We Collect This Information</h3>
+        <ul>
+          <li>To ensure the security and safety of everyone on our premises.</li>
+          <li>For emergency contact and evacuation procedures.</li>
+          <li>For internal record-keeping, management, and auditing.</li>
+          <li>To improve our visitor management process.</li>
+          <li>For contact tracing in health-related emergencies.</li>
+          <li>To comply with legal and regulatory requirements.</li>
+          <li>To keep you informed about events, offers, and community updates. (You can opt out at any time.)</li>
+        </ul>
+
+        <h3>How We Keep Your Information Safe</h3>
+        <ul>
+          <li>We use technical and organizational measures to protect your data from unauthorized access.</li>
+          <li>Access is limited to authorized personnel only.</li>
+          <li>We retain your information only as long as necessary or required by law.</li>
+          <li>Your data is stored in a secure database.</li>
+        </ul>
+
+        <h3>Your Rights</h3>
+        <ul>
+          <li>You can request to see the information we hold about you.</li>
+          <li>You can request corrections to inaccuracies.</li>
+          <li>You can request deletion of your data when no longer needed.</li>
+          <li>You can unsubscribe from our updates at any time.</li>
+        </ul>
+
+        <h3>Updates to These Terms</h3>
+        <p>These terms may be updated periodically. We recommend reviewing them regularly.</p>
+      `,
+      vi: `
+        <p>Chúng tôi trân trọng sự ghé thăm của bạn. Để chuyến thăm diễn ra thuận lợi và an toàn, chúng tôi sẽ thu thập một số thông tin khi bạn đăng ký. Chúng tôi cam kết bảo vệ quyền riêng tư và xử lý dữ liệu của bạn một cách có trách nhiệm.</p>
+
+        <h3>Thông tin chúng tôi thu thập</h3>
+        <ul>
+          <li>Họ và tên đầy đủ của bạn</li>
+          <li>Ngày và giờ thăm</li>
+          <li>Công ty hoặc tổ chức (nếu có)</li>
+          <li>Mục đích chuyến thăm</li>
+          <li>Thông tin liên hệ (số điện thoại, email)</li>
+          <li>Lĩnh vực quan tâm (nếu tự nguyện cung cấp)</li>
+        </ul>
+
+        <h3>Lý do thu thập thông tin</h3>
+        <ul>
+          <li>Đảm bảo an ninh và an toàn cho mọi người trong khuôn viên.</li>
+          <li>Liên hệ khẩn cấp và thực hiện thủ tục sơ tán.</li>
+          <li>Lưu trữ hồ sơ nội bộ, quản lý và kiểm toán.</li>
+          <li>Cải thiện quy trình quản lý khách thăm.</li>
+          <li>Truy vết tiếp xúc trong các trường hợp khẩn cấp về sức khỏe.</li>
+          <li>Tuân thủ các yêu cầu pháp lý và quy định.</li>
+          <li>Thông báo cho bạn về các sự kiện, ưu đãi và cập nhật cộng đồng. (Bạn có thể hủy đăng ký bất cứ lúc nào.)</li>
+        </ul>
+
+        <h3>Cách chúng tôi bảo vệ thông tin của bạn</h3>
+        <ul>
+          <li>Chúng tôi áp dụng các biện pháp kỹ thuật và tổ chức để bảo vệ dữ liệu của bạn.</li>
+          <li>Quyền truy cập chỉ giới hạn cho nhân viên được ủy quyền.</li>
+          <li>Chúng tôi chỉ lưu giữ thông tin trong thời gian cần thiết hoặc theo quy định pháp luật.</li>
+          <li>Dữ liệu của bạn được lưu trữ trong cơ sở dữ liệu bảo mật.</li>
+        </ul>
+
+        <h3>Quyền của bạn</h3>
+        <ul>
+          <li>Bạn có thể yêu cầu xem thông tin chúng tôi đang lưu giữ về bạn.</li>
+          <li>Bạn có thể yêu cầu chỉnh sửa các thông tin không chính xác.</li>
+          <li>Bạn có thể yêu cầu xóa dữ liệu khi không còn cần thiết.</li>
+          <li>Bạn có thể hủy đăng ký nhận thông báo bất cứ lúc nào.</li>
+        </ul>
+
+        <h3>Cập nhật điều khoản</h3>
+        <p>Các điều khoản này có thể được cập nhật định kỳ. Chúng tôi khuyến nghị bạn xem lại thường xuyên.</p>
+      `
+    };
+
+    // ─── INIT ──────────────────────────────────────────────────────────────────
+    const params = new URLSearchParams(window.location.search);
+    const lang   = (params.get('lang') === 'vi') ? 'vi' : 'en';
+    const t      = i18n[lang];
+
+    // ─── QR EXPIRY CHECK (5-minute window) ──────────────────────────────────
+    const QR_EXPIRY_MS = 5 * 60 * 1000;
+    const tsParam = parseInt(params.get('ts'), 10);
+    if (tsParam && (Date.now() - tsParam > QR_EXPIRY_MS)) {
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.innerHTML =
+          '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px;font-family:Segoe UI,Arial,sans-serif;">' +
+          '<div style="font-size:3rem;margin-bottom:16px;">⏰</div>' +
+          '<h2 style="color:#0a1628;">' + (lang === 'vi' ? 'Mã QR đã hết hạn' : 'QR Code Expired') + '</h2>' +
+          '<p style="color:#5a7090;margin-top:12px;max-width:300px;line-height:1.6;">' +
+          (lang === 'vi'
+            ? 'Vui lòng quay lại quầy lễ tân và quét mã QR mới.'
+            : 'Please return to the reception kiosk and scan a new QR code.') +
+          '</p></div>';
+      });
+    }
+
+    function applyLanguage() {
+      document.getElementById('header-title').textContent = t.headerTitle;
+      document.getElementById('lbl-first').textContent   = t.lblFirst;
+      document.getElementById('lbl-last').textContent    = t.lblLast;
+      document.getElementById('lbl-company').textContent = t.lblCompany;
+      document.getElementById('lbl-host').textContent    = t.lblHost;
+      document.getElementById('lbl-date').textContent    = t.lblDate;
+      document.getElementById('lbl-email').textContent   = t.lblEmail;
+      document.getElementById('lbl-phone').textContent   = t.lblPhone;
+      document.getElementById('submit-btn').textContent  = t.submitBtn;
+
+      // Build terms text safely using DOM methods
+      const termsEl = document.getElementById('terms-text');
+      termsEl.textContent = '';
+      const textSpan = document.createElement('span');
+      textSpan.innerHTML = t.termsText; // trusted i18n string with <b> tag
+      termsEl.appendChild(textSpan);
+      termsEl.appendChild(document.createTextNode(' '));
+      const link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'terms-link';
+      link.textContent = t.termsLink;
+      link.addEventListener('click', openModal);
+      termsEl.appendChild(link);
+      termsEl.appendChild(document.createTextNode('.'));
+
+      document.getElementById('modal-title').textContent  = t.modalTitle;
+      document.getElementById('modal-body').innerHTML     = termsContent[lang];
+    }
+
+    function setVisitDate() {
+      const now    = new Date();
+      const pad    = n => String(n).padStart(2, '0');
+      const local  = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      document.getElementById('visitDate').value = local;
+    }
+
+    applyLanguage();
+    setVisitDate();
+
+    // ─── MODAL ─────────────────────────────────────────────────────────────────
+    let previousFocus = null;
+
+    function openModal() {
+      previousFocus = document.activeElement;
+      const overlay = document.getElementById('modal-overlay');
+      overlay.classList.add('open');
+      // Focus the close button when modal opens
+      const closeBtn = overlay.querySelector('.modal-close');
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('open');
+      if (previousFocus) previousFocus.focus();
+    }
+
+    document.getElementById('modal-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    // Focus trap: keep Tab cycling inside the modal
+    document.getElementById('modal-overlay').addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { closeModal(); return; }
+      if (e.key !== 'Tab') return;
+      const focusable = this.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last  = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      }
+    });
+
+    // ─── VALIDATION ────────────────────────────────────────────────────────────
+    function showError(id, msg) {
+      const el = document.getElementById('err-' + id);
+      if (el) { el.textContent = msg; el.style.display = 'block'; }
+      const inp = document.getElementById(id);
+      if (inp) inp.classList.add('error');
+    }
+
+    function clearErrors() {
+      ['firstName','lastName','company','hostName','email'].forEach(id => {
+        const el = document.getElementById('err-' + id);
+        if (el) { el.style.display = 'none'; }
+        const inp = document.getElementById(id);
+        if (inp) inp.classList.remove('error');
+      });
+      document.getElementById('err-terms').style.display = 'none';
+      document.getElementById('terms-row').classList.remove('error-border');
+    }
+
+    function validate(data) {
+      let valid = true;
+
+      if (!data.firstName.trim()) { showError('firstName', t.errRequired); valid = false; }
+      if (!data.lastName.trim())  { showError('lastName',  t.errRequired); valid = false; }
+      if (!data.company.trim())   { showError('company',   t.errRequired); valid = false; }
+      if (!data.hostName.trim())  { showError('hostName',  t.errRequired); valid = false; }
+
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+      if (!data.email.trim()) {
+        showError('email', t.errRequired); valid = false;
+      } else if (!emailRe.test(data.email.trim())) {
+        showError('email', t.errEmail); valid = false;
+      }
+
+      if (!data.terms) {
+        const errEl = document.getElementById('err-terms');
+        errEl.textContent = t.errTerms;
+        errEl.style.display = 'block';
+        document.getElementById('terms-row').classList.add('error-border');
+        valid = false;
+      }
+
+      return valid;
+    }
+
+    // ─── SUBMIT ────────────────────────────────────────────────────────────────
+    document.getElementById('checkin-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      clearErrors();
+
+      const data = {
+        firstName: document.getElementById('firstName').value,
+        lastName:  document.getElementById('lastName').value,
+        company:   document.getElementById('company').value,
+        hostName:  document.getElementById('hostName').value,
+        visitDate: document.getElementById('visitDate').value,
+        email:     document.getElementById('email').value,
+        phone:     document.getElementById('phone').value,
+        language:  lang,
+        terms:     document.getElementById('termsCheck').checked
+      };
+
+      if (!validate(data)) return;
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = lang === 'vi' ? 'Đang gửi…' : 'Submitting…';
+
+      // Remove 'terms' boolean before sending — not needed in the Sheet
+      const payload = { ...data };
+      delete payload.terms;
+
+      try {
+        const resp = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload),
+          redirect: 'follow'
+        });
+
+        if (!resp.ok) {
+          throw new Error('Server responded with status ' + resp.status);
+        }
+
+        const result = await resp.json();
+        if (result.status !== 'success') {
+          throw new Error(result.message || 'Unknown server error');
+        }
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = t.submitBtn;
+        alert(t.errSubmit);
+        return;
+      }
+
+      // Clear form data from DOM immediately
+      document.getElementById('checkin-form').reset();
+
+      // Show thank you screen
+      document.getElementById('form-card').style.display = 'none';
+      const thanks = document.getElementById('thanks-screen');
+      thanks.style.display = 'flex';
+      document.getElementById('thanks-title').textContent    = t.thanksTitle;
+      document.getElementById('thanks-sub').textContent      = t.thanksSub;
+      document.getElementById('redirect-note').textContent   = t.redirectNote;
+
+      // Redirect after 3 seconds
+      setTimeout(() => {
+        window.location.href = REDIRECT[lang];
+      }, 3000);
+    });
+  </script>
+</body>
+</html>
