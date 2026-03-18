@@ -4,295 +4,160 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Officience Visitor Check-In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet" />
   <script src="qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #0a1628;
-      color: #fff;
+      font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+      background: #0F1219;
+      color: #F7F7F7;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      user-select: none;
+      padding: 40px 20px;
     }
 
-    .logo {
-      font-size: 1.4rem;
-      font-weight: 700;
-      letter-spacing: 2px;
-      color: #4da6e8;
-      text-transform: uppercase;
-      margin-bottom: 8px;
+    h1, h2, h3, h4, h5, h6, .btn-text {
+      font-family: 'Lexend', 'Segoe UI', Arial, sans-serif;
     }
 
-    .tagline {
-      font-size: 0.85rem;
-      color: #7a9bbf;
+    .logo-img {
+      height: 56px;
       margin-bottom: 48px;
-      letter-spacing: 1px;
     }
 
-    /* --- Language Select Screen --- */
-    #lang-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      animation: fadeIn 0.5s ease;
-    }
-
-    .prompt {
+    .welcome {
+      font-family: 'Lexend', sans-serif;
       font-size: 1.6rem;
-      font-weight: 300;
-      color: #cde0f5;
-      margin-bottom: 12px;
-      text-align: center;
-    }
-
-    .prompt-sub {
-      font-size: 1rem;
-      color: #7a9bbf;
-      margin-bottom: 48px;
-      text-align: center;
-    }
-
-    .lang-buttons {
-      display: flex;
-      gap: 32px;
-    }
-
-    .lang-btn {
-      width: 200px;
-      height: 200px;
-      border-radius: 20px;
-      border: 2px solid #1e3a5f;
-      background: #0f2240;
-      color: #fff;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      transition: all 0.2s ease;
-      font-size: 1rem;
-    }
-
-    .lang-btn:hover {
-      background: #1a3a6e;
-      border-color: #4da6e8;
-      transform: translateY(-4px);
-      box-shadow: 0 8px 32px rgba(77, 166, 232, 0.2);
-    }
-
-    .lang-btn .flag { font-size: 3rem; }
-    .lang-btn .lang-name { font-size: 1.1rem; font-weight: 600; color: #cde0f5; }
-    .lang-btn .lang-sub { font-size: 0.8rem; color: #7a9bbf; }
-
-    /* --- QR Screen --- */
-    #qr-screen {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      animation: fadeIn 0.5s ease;
-    }
-
-    .qr-instruction {
-      font-size: 1.5rem;
-      font-weight: 300;
-      color: #cde0f5;
+      font-weight: 600;
+      color: #F7F7F7;
       margin-bottom: 8px;
       text-align: center;
     }
 
-    .qr-instruction-sub {
+    .welcome-sub {
       font-size: 0.95rem;
-      color: #7a9bbf;
-      margin-bottom: 36px;
+      color: #A0A0A0;
+      margin-bottom: 40px;
       text-align: center;
+      line-height: 1.6;
     }
 
     #qr-box {
       background: #fff;
       border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 8px 48px rgba(77, 166, 232, 0.15);
+      padding: 24px;
+      box-shadow: 0 8px 48px rgba(31, 73, 191, 0.15);
     }
 
-    .countdown-bar-wrap {
-      width: 280px;
-      height: 4px;
-      background: #1e3a5f;
-      border-radius: 4px;
+    .scan-label {
+      font-family: 'Lexend', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #A0A0A0;
       margin-top: 24px;
-      overflow: hidden;
+      text-align: center;
+      line-height: 1.6;
     }
 
-    #countdown-bar {
-      height: 100%;
-      background: #4da6e8;
-      width: 100%;
-      transition: width 1s linear;
+    .print-btn {
+      margin-top: 32px;
+      background: #1F49BF;
+      color: #fff;
+      border: none;
+      padding: 14px 36px;
+      border-radius: 10px;
+      font-family: 'Lexend', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
     }
 
-    .countdown-label {
+    .print-btn:hover {
+      background: #1839a0;
+    }
+
+    .footer-note {
+      margin-top: 48px;
       font-size: 0.8rem;
-      color: #7a9bbf;
-      margin-top: 10px;
+      color: #A0A0A0;
       text-align: center;
     }
 
-    .back-btn {
-      margin-top: 28px;
-      background: transparent;
-      border: 1px solid #1e3a5f;
-      color: #7a9bbf;
-      padding: 10px 28px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+    /* ── Print Styles ──────────────────────────────────────── */
+    @media print {
+      body {
+        background: #fff;
+        color: #000;
+        padding: 0;
+        justify-content: flex-start;
+        padding-top: 60px;
+      }
 
-    .back-btn:hover {
-      border-color: #4da6e8;
-      color: #cde0f5;
-    }
+      .logo-img {
+        height: 44px;
+        margin-bottom: 32px;
+      }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
+      .welcome, .welcome-sub, .print-btn, .footer-note {
+        display: none;
+      }
+
+      #qr-box {
+        box-shadow: none;
+        border: 2px solid #eee;
+      }
+
+      .scan-label {
+        color: #333;
+        font-size: 1.1rem;
+        margin-top: 20px;
+      }
     }
   </style>
 </head>
 <body>
 
-  <div class="logo">Officience</div>
-  <div class="tagline">Visitor Check-In System</div>
+  <img src="https://pub-e3bac769bc084adbae54275f1413ca66.r2.dev/Logo.png" alt="Officience" class="logo-img" />
 
-  <!-- Language Selection -->
-  <div id="lang-screen">
-    <div class="prompt">Welcome! Xin chào!</div>
-    <div class="prompt-sub">Please select your language &nbsp;/&nbsp; Vui lòng chọn ngôn ngữ</div>
-    <div class="lang-buttons">
-      <button class="lang-btn" onclick="showQR('vi')">
-        <span class="flag">🇻🇳</span>
-        <span class="lang-name">Tiếng Việt</span>
-        <span class="lang-sub">Vietnamese</span>
-      </button>
-      <button class="lang-btn" onclick="showQR('en')">
-        <span class="flag">🇬🇧</span>
-        <span class="lang-name">English</span>
-        <span class="lang-sub">English</span>
-      </button>
-    </div>
+  <div class="welcome">Welcome to Officience</div>
+  <div class="welcome-sub">
+    Scan the QR code below to check in as a visitor.<br />
+    Quét mã QR bên dưới để đăng ký khách thăm.
   </div>
 
-  <!-- QR Code Display -->
-  <div id="qr-screen">
-    <div class="qr-instruction" id="qr-title">Scan this QR code with your phone</div>
-    <div class="qr-instruction-sub" id="qr-sub">Open your camera and point it at the code below</div>
-    <div id="qr-box">
-      <div id="qrcode"></div>
-    </div>
-    <div class="countdown-bar-wrap">
-      <div id="countdown-bar"></div>
-    </div>
-    <div class="countdown-label" id="countdown-label">Screen resets in 60s</div>
-    <button class="back-btn" onclick="resetToLang()">&#8592; Back / Quay lại</button>
+  <div id="qr-box">
+    <div id="qrcode"></div>
+  </div>
+
+  <div class="scan-label">
+    Scan to check in &nbsp;/&nbsp; Quét để đăng ký
+  </div>
+
+  <button class="print-btn" onclick="window.print()">Print QR Code</button>
+
+  <div class="footer-note">
+    Officience &mdash; Visitor Check-In
   </div>
 
   <script>
-    // ─── CONFIG ────────────────────────────────────────────────────────────────
-    // Update this to your hosted URL once deployed.
-    // For local testing, use the full path to checkin.html.
-    const CHECKIN_BASE_URL = 'https://officience-visitor-checkin.vercel.app/checkin.html';
-    const RESET_SECONDS = 60;
-    // ───────────────────────────────────────────────────────────────────────────
+    const CHECKIN_URL = 'https://officience-visitor-checkin.vercel.app/checkin.html';
 
-    let countdownTimer = null;
-    let qrInstance = null;
-
-    const text = {
-      vi: {
-        title: 'Quét mã QR bằng điện thoại của bạn',
-        sub:   'Mở camera và hướng vào mã bên dưới',
-        countdown: 'Màn hình sẽ đặt lại sau',
-        seconds: 'giây'
-      },
-      en: {
-        title: 'Scan this QR code with your phone',
-        sub:   'Open your camera and point it at the code below',
-        countdown: 'Screen resets in',
-        seconds: 's'
-      }
-    };
-
-    function showQR(lang) {
-      const langScreen = document.getElementById('lang-screen');
-      const qrScreen   = document.getElementById('qr-screen');
-      const t = text[lang];
-
-      document.getElementById('qr-title').textContent = t.title;
-      document.getElementById('qr-sub').textContent   = t.sub;
-
-      langScreen.style.display = 'none';
-      qrScreen.style.display   = 'flex';
-
-      // Build URL with lang param and timestamp for expiry
-      const ts = Date.now();
-      const url = CHECKIN_BASE_URL + '?lang=' + lang + '&ts=' + ts;
-
-      // Clear previous QR
-      const qrEl = document.getElementById('qrcode');
-      qrEl.innerHTML = '';
-      qrInstance = new QRCode(qrEl, {
-        text: url,
-        width: 240,
-        height: 240,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
-      });
-
-      // Countdown
-      startCountdown(lang, t);
-    }
-
-    function startCountdown(lang, t) {
-      clearInterval(countdownTimer);
-      let remaining = RESET_SECONDS;
-      const bar   = document.getElementById('countdown-bar');
-      const label = document.getElementById('countdown-label');
-
-      bar.style.transition = 'none';
-      bar.style.width = '100%';
-
-      // Force reflow before starting transition
-      bar.getBoundingClientRect();
-      bar.style.transition = `width ${RESET_SECONDS}s linear`;
-      bar.style.width = '0%';
-
-      label.textContent = `${t.countdown} ${remaining}${t.seconds}`;
-
-      countdownTimer = setInterval(() => {
-        remaining--;
-        label.textContent = `${t.countdown} ${remaining}${t.seconds}`;
-        if (remaining <= 0) {
-          clearInterval(countdownTimer);
-          resetToLang();
-        }
-      }, 1000);
-    }
-
-    function resetToLang() {
-      clearInterval(countdownTimer);
-      document.getElementById('qr-screen').style.display  = 'none';
-      document.getElementById('lang-screen').style.display = 'flex';
-    }
+    new QRCode(document.getElementById('qrcode'), {
+      text: CHECKIN_URL,
+      width: 260,
+      height: 260,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
   </script>
 </body>
 </html>
