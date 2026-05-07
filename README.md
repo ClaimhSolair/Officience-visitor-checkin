@@ -27,7 +27,8 @@ A lightweight QR-based visitor check-in system built with static HTML/CSS/JS and
 | File | Description |
 |------|-------------|
 | `index.html` | Kiosk display page — language selection + QR code generator |
-| `checkin.html` | Mobile check-in form — bilingual (EN/VI), Terms modal, submit to Sheets |
+| `checkin.html` | Mobile check-in form — bilingual (EN/VI), Terms modal, submit via Vercel API |
+| `api/checkin.js` | Vercel serverless proxy — validates form data and forwards to Google Apps Script |
 | `appsscript.gs` | Google Apps Script backend — paste into Apps Script editor |
 | `README.md` | This file |
 
@@ -88,12 +89,13 @@ All visitor data is **write-only from the client side**:
 ### Stage 2 — Connect the Form to Google Sheets
 
 1. Open `checkin.html` in Notepad (right-click → Open with → Notepad).
-2. Press **Ctrl+F** and search for: `YOUR_APPS_SCRIPT_URL_HERE`
-3. Replace it with the Web App URL from Stage 1, Step 10:
-   ```js
-   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_ID/exec';
+2. In Vercel, open your project and go to **Settings → Environment Variables**.
+3. Add:
+   ```txt
+   APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec
    ```
-4. Save the file (Ctrl+S).
+4. Redeploy the site so the serverless function picks up the variable.
+5. No change is needed in `checkin.html`; it submits to `/api/checkin` on the same domain.
 
 ---
 
@@ -143,11 +145,16 @@ const RESET_SECONDS = 60;                 // Auto-reset kiosk after N seconds
 
 ### `checkin.html`
 ```js
-const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE'; // From Google Apps Script deploy
+const SUBMIT_URL = '/api/checkin'; // Same-origin Vercel API route
 const REDIRECT = {
   vi: 'https://officience.com/',
   en: 'https://www.linkedin.com/company/officience'
 };
+```
+
+### Vercel environment variable
+```txt
+APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec
 ```
 
 ### `appsscript.gs`
@@ -176,3 +183,68 @@ The sheet is auto-created with these columns on the first submission:
 | Hosting | Netlify (free static hosting) |
 | Bilingual support | EN/VI translations embedded in HTML |
 | Terms & Policies | Modal popup, bilingual, sourced from company T&C document |
+
+---
+
+## Follow-Up Email Automation (HR)
+
+Each morning, HR finds one Gmail draft per previous-day visitor — pre-filled with the visitor's name, host, visit date, and a Google review link. HR reviews each draft and sends it manually. Nothing is ever auto-sent.
+
+### How it works
+
+- A scheduled function `createFollowUpDrafts()` in `appsscript.gs` runs daily (between 9–10 AM, Google's chosen minute within that window).
+- It reads the `Officience Visitor Log` Sheet, finds rows whose `Timestamp` was yesterday, and creates one Gmail draft per row.
+- The draft lands in whichever Google account **installed the trigger** — which must be HR's designated email.
+- Each drafted row is marked in column **J (`Follow-up Drafted At`)** so it's never re-drafted.
+
+### One-time setup
+
+#### Step 1 — Add the dedup column
+
+Anyone with edit access to the Sheet can do this.
+
+1. Open the Google Sheet.
+2. In the header row, add a new column J titled: `Follow-up Drafted At`
+3. That's it — leave the column empty.
+
+#### Step 2 — Install the daily trigger
+
+Must be done by HR, from HR's own browser, signed into the HR email account.
+
+1. Open the `Officience Visitor Log` Sheet.
+2. Click **Extensions → Apps Script**. The script editor opens.
+3. In the left sidebar, click the **clock icon** (Triggers).
+4. Click **+ Add Trigger** (bottom right).
+5. Configure:
+   - **Function to run:** `createFollowUpDrafts`
+   - **Deployment:** `Head`
+   - **Event source:** `Time-driven`
+   - **Type of time-based trigger:** `Day timer`
+   - **Time of day:** `9am to 10am`
+6. Click **Save**. Google will prompt for permission to access Gmail — click **Authorize** and accept.
+7. Done. Drafts will start appearing in HR's Gmail Drafts folder starting the next morning.
+
+### Updating the email copy later
+
+Edit these three constants at the top of the follow-up section in `appsscript.gs`:
+
+```js
+const FOLLOWUP_REVIEW_LINK = 'https://g.page/r/...';   // HR's real Google review URL
+const FOLLOWUP_SUBJECT     = 'Thank you for visiting Officience';
+const FOLLOWUP_TEMPLATE_EN = '...body text with {{firstName}}, {{hostName}}, {{visitDate}}, {{reviewLink}} placeholders...';
+```
+
+Save the script. No redeploy or trigger reinstall needed — the next scheduled run uses the new copy.
+
+### Handover when HR changes
+
+The trigger runs as the Google account that **installed it**. If the original HR person leaves and their account is suspended, the trigger silently stops firing.
+
+**Before the old HR account is suspended:** the incoming HR must repeat **Step 2** above from their own browser (signed into the new HR account). This installs a fresh trigger under the new account. Delete the old trigger afterwards from the Triggers panel.
+
+### Known limitations
+
+- Trigger fires within a ~1-hour window — expected and acceptable.
+- No tracking of whether HR actually sent the draft — only draft creation is recorded.
+- Follow-up emails are English-only. HR translates to Vietnamese manually in the draft if needed.
+- If a visitor typos their email at check-in, the draft still gets created; HR will see the bounce after sending.

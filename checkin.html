@@ -441,8 +441,9 @@
 
   <script>
     // ─── CONFIG ────────────────────────────────────────────────────────────────
-    // Paste your deployed Google Apps Script Web App URL here:
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzvWomI7-VHp3fdQ0Q4gZysGa3e3QNQCaOjrJIYXGsRzt9emaaDQH65UeYT0CC-BUUM/exec';
+    // Submit to the same-origin Vercel API route. The serverless function
+    // forwards requests to Google Apps Script to avoid browser-side blocking.
+    const SUBMIT_URL = '/api/checkin';
 
     const REDIRECT = {
       vi: 'https://officience.com/',
@@ -745,15 +746,16 @@
       delete payload.terms;
 
       try {
-        const resp = await fetch(APPS_SCRIPT_URL, {
+        const resp = await fetch(SUBMIT_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
           redirect: 'follow'
         });
 
         if (!resp.ok) {
-          throw new Error('Server responded with status ' + resp.status);
+          const errorBody = await resp.json().catch(() => null);
+          throw new Error((errorBody && errorBody.message) || ('Server responded with status ' + resp.status));
         }
 
         const result = await resp.json();
@@ -763,7 +765,7 @@
       } catch (err) {
         btn.disabled = false;
         btn.textContent = t.submitBtn;
-        alert(t.errSubmit);
+        alert((err && err.message) ? err.message : t.errSubmit);
         return;
       }
 
